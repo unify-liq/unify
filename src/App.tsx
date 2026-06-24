@@ -184,9 +184,13 @@ const executeBridge = async () => {
     );
   }
 
- const decimals    = TOKEN_DECIMALS[tokenSym];
-  const outputAmt   = quote ? (Number(quote.outputAmount) / 10 ** decimals).toFixed(4) : null;
-  const fee         = quote && amount ? (Number(amount) - Number(outputAmt)).toFixed(4) : null;
+const decimals    = TOKEN_DECIMALS[tokenSym];
+  const outputAmt   = quote?.outputToken?.amount
+    ? (Number(quote.outputToken.amount) / 10 ** decimals).toFixed(4)
+    : quote?.minOutputAmount
+    ? (Number(quote.minOutputAmount) / 10 ** decimals).toFixed(4)
+    : null;
+  const fee         = outputAmt && amount ? (Number(amount) - Number(outputAmt)).toFixed(4) : null;
   const fillTimeSec = quote?.estimatedFillTimeSec ?? 2;
 
   return (
