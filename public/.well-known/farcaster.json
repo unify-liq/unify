@@ -2,34 +2,28 @@
   "miniapp": {
     "name": "Unify",
     "version": "1",
-    "iconUrl": "https://replaced-jet-tenant-readers.trycloudflare.com/icon.png",
-    "homeUrl": "https://replaced-jet-tenant-readers.trycloudflare.com",
-    "imageUrl": "https://replaced-jet-tenant-readers.trycloudflare.com/image.png",
-    "buttonTitle": "Bridge instantly",
-    "splashImageUrl": "https://replaced-jet-tenant-readers.trycloudflare.com/splash.png",
+    "iconUrl": "https://unify-two-rho.vercel.app/icon.png",
+    "homeUrl": "https://unify-two-rho.vercel.app",
+    "imageUrl": "https://unify-two-rho.vercel.app/image.png",
+    "buttonTitle": "Bridge",
+    "splashImageUrl": "https://unify-two-rho.vercel.app/icon.png",
     "splashBackgroundColor": "#0a0a0a",
-    "webhookUrl": "https://replaced-jet-tenant-readers.trycloudflare.com/api/webhook",
-    "subtitle": "Bridge instantly across chains!",
+    "webhookUrl": "https://unify-two-rho.vercel.app/api/webhook",
+    "subtitle": "Bridge across chains",
     "description": "Unify your liquidity across all and any chain.",
     "primaryCategory": "utility",
     "screenshotUrls": [
-      "https://placehold.co/200x200/7c3aed/ffffff/png"
+      "https://unify-two-rho.vercel.app/image.png"
     ],
-    "heroImageUrl": "https://placehold.co/200x200/7c3aed/ffffff/png",
-    "tags": [
-      "bridge",
-      "utility",
-      "community",
-      "swap",
-      "crosschain"
-    ],
+    "heroImageUrl": "https://unify-two-rho.vercel.app/image.png",
+    "tags": ["bridge", "utility", "swap", "crosschain"],
     "ogTitle": "Unify",
     "ogDescription": "Unify your liquidity in seconds",
-    "ogImageUrl": "https://placehold.co/200x200/7c3aed/ffffff/png"
+    "ogImageUrl": "https://unify-two-rho.vercel.app/image.png"
   },
   "accountAssociation": {
-    "header": "eyJmaWQiOjUxNDExMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweEQ4N2VGQjc0NTk3ZTQ3RkUzQjBjOGNGZDRjMTI2MkJBQWZBN0I0RGEifQ",
-    "payload": "eyJkb21haW4iOiJyZXBsYWNlZC1qZXQtdGVuYW50LXJlYWRlcnMudHJ5Y2xvdWRmbGFyZS5jb20ifQ",
-    "signature": "ZCbJ2Fwsi+bxfMYFSBHPCaToFsDzukSU9B9o/IyNBh1WYq2QEHd4adhXw0anbl+hOy4T703TxNNYQQMoizJVXRs="
+    "header": "",
+    "payload": "",
+    "signature": ""
   }
 }
