@@ -112,7 +112,7 @@ function BridgeWidget() {
     sym => TOKEN_ADDRESSES[sym][fromChain.id] && TOKEN_ADDRESSES[sym][toChain.id]
   );
 
-  const getQuote = async () => {
+const getQuote = async () => {
     if (!amount || !address) return;
     const inputAddress  = TOKEN_ADDRESSES[tokenSym][fromChain.id];
     const outputAddress = TOKEN_ADDRESSES[tokenSym][toChain.id];
@@ -124,6 +124,9 @@ function BridgeWidget() {
     setQuote(null);
     setStatus("");
     try {
+      const parsedAmount = parseUnits(amount, TOKEN_DECIMALS[tokenSym]);
+      console.log("inputAmount:", parsedAmount.toString());
+      console.log("route:", { originChainId: fromChain.id, destinationChainId: toChain.id, inputToken: inputAddress, outputToken: outputAddress });
       const q = await acrossClient.getQuote({
         route: {
           originChainId:      fromChain.id,
@@ -131,10 +134,11 @@ function BridgeWidget() {
           inputToken:         inputAddress,
           outputToken:        outputAddress,
         },
-        inputAmount: parseUnits(amount, TOKEN_DECIMALS[tokenSym]),
+        inputAmount: parsedAmount,
       });
       setQuote(q);
     } catch (e: any) {
+      console.error("Quote error:", e);
       setStatus("❌ " + (e.message || "No route found"));
     }
     setLoading(false);
