@@ -124,59 +124,55 @@ const getQuote = async () => {
     setQuote(null);
     setStatus("");
     try {
-      const parsedAmount = parseUnits(amount, TOKEN_DECIMALS[tokenSym]);
-      console.log("inputAmount:", parsedAmount.toString());
-      console.log("route:", { originChainId: fromChain.id, destinationChainId: toChain.id, inputToken: inputAddress, outputToken: outputAddress });
-      const q = await acrossClient.getQuote({
-        route: {
-          originChainId:      fromChain.id,
-          destinationChainId: toChain.id,
-          inputToken:         inputAddress,
-          outputToken:        outputAddress,
-        },
-        inputAmount: parsedAmount,
+      const params = new URLSearchParams({
+        tradeType:          "exactInput",
+        originChainId:      fromChain.id.toString(),
+        destinationChainId: toChain.id.toString(),
+        inputToken:         inputAddress,
+        outputToken:        outputAddress,
+        amount:             parseUnits(amount, TOKEN_DECIMALS[tokenSym]).toString(),
+        depositor:          address,
+        integratorId:       INTEGRATOR_ID,
       });
-      setQuote(q);
+      const res = await fetch(`https://app.across.to/api/swap/approval?${params}`, {
+        headers: { Authorization: `Bearer ${import.meta.env.VITE_ACROSS_API_KEY}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Quote failed");
+      setQuote(data);
     } catch (e: any) {
-      console.error("Quote error:", e);
       setStatus("❌ " + (e.message || "No route found"));
     }
     setLoading(false);
   };
 
-  const executeBridge = async () => {
-    if (!quote || !walletClient || !originPublicClient) return;
+const executeBridge = async () => {
+    if (!quote || !walletClient) return;
     setExecuting(true);
     setStatus("Preparing...");
     try {
-      const destPublicClient = createPublicClient({
-        chain:     toChain.chain,
-        transport: http(),
+      if (quote.approvalTxns?.length) {
+        setStatus("⏳ Approving token...");
+        for (const approvalTx of quote.approvalTxns) {
+          const hash = await walletClient.sendTransaction({
+            to:   approvalTx.to,
+            data: approvalTx.data,
+          });
+          setStatus("⏳ Waiting for approval...");
+          await originPublicClient!.waitForTransactionReceipt({ hash });
+        }
+        setStatus("✅ Approved!");
+      }
+      setStatus("⏳ Sending to bridge...");
+      const hash = await walletClient.sendTransaction({
+        to:    quote.swapTx.to,
+        data:  quote.swapTx.data,
+        value: quote.swapTx.value ? BigInt(quote.swapTx.value) : 0n,
+        gas:   quote.swapTx.gas   ? BigInt(quote.swapTx.gas)   : undefined,
       });
-
-      await acrossClient.executeQuote({
-        walletClient:      walletClient as any,
-        originClient:      originPublicClient as any,
-        destinationClient: destPublicClient as any,
-        deposit:           quote.deposit,
-        integratorId:      INTEGRATOR_ID,
-        onProgress: (progress: any) => {
-          if (progress.step === "approve" && progress.status === "txPending")
-            setStatus("⏳ Approving token...");
-          if (progress.step === "approve" && progress.status === "txSuccess")
-            setStatus("✅ Approved!");
-          if (progress.step === "deposit" && progress.status === "txPending")
-            setStatus("⏳ Sending to bridge...");
-          if (progress.step === "deposit" && progress.status === "txSuccess")
-            setStatus("✅ Deposited! Waiting for fill...");
-          if (progress.step === "fill" && progress.status === "txPending")
-            setStatus("⚡ Filling on " + toChain.name + "...");
-          if (progress.step === "fill" && progress.status === "txSuccess")
-            setStatus("🎉 Done! Funds arrived on " + toChain.name);
-          if (progress.status === "error" || progress.status === "txError")
-            setStatus("❌ " + (progress.error?.message || "Error"));
-        },
-      });
+      setStatus("✅ Deposited! Waiting for fill...");
+      await originPublicClient!.waitForTransactionReceipt({ hash });
+      setStatus("🎉 Done! Funds arriving on " + toChain.name + " in ~2s");
     } catch (e: any) {
       setStatus("❌ " + (e.message || "Transaction failed"));
     }
@@ -194,8 +190,8 @@ const getQuote = async () => {
     );
   }
 
-  const decimals    = TOKEN_DECIMALS[tokenSym];
-  const outputAmt   = quote ? (Number(quote.deposit.outputAmount) / 10 ** decimals).toFixed(4) : null;
+ const decimals    = TOKEN_DECIMALS[tokenSym];
+  const outputAmt   = quote ? (Number(quote.outputAmount) / 10 ** decimals).toFixed(4) : null;
   const fee         = quote && amount ? (Number(amount) - Number(outputAmt)).toFixed(4) : null;
   const fillTimeSec = quote?.estimatedFillTimeSec ?? 2;
 
