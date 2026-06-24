@@ -22,8 +22,8 @@
     "ogImageUrl": "https://unify-two-rho.vercel.app/image.png"
   },
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "eyJmaWQiOjUxNDExMywidHlwZSI6ImF1dGgiLCJrZXkiOiIweEQ4N2VGQjc0NTk3ZTQ3RkUzQjBjOGNGZDRjMTI2MkJBQWZBN0I0RGEifQ",
+    "payload": "eyJkb21haW4iOiJ1bmlmeS10d28tcmhvLnZlcmNlbC5hcHAifQ",
+    "signature": "ReHQ6I4V0QiCAAKu0cYv45N0iKjfj5HwyJeZ1ORmyJQYa53G/O33VHdCyASeuiGJ9mHGNZ6ct0jyaIBo+cMumhw="
   }
 }
