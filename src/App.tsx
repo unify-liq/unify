@@ -1,8 +1,7 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
 import { useAccount, useConnect, useWalletClient, usePublicClient } from "wagmi";
-import { createAcrossClient } from "@across-protocol/app-sdk";
-import { parseUnits, createPublicClient, http, type Address } from "viem";
+import { parseUnits, type Address } from "viem";
 import {
   base, arbitrum, optimism, mainnet,
   polygon, zora, bsc, worldchain, soneium, unichain
@@ -12,11 +11,6 @@ import {
 // CONFIGURACIÓN
 // ============================================================
 const INTEGRATOR_ID = "0x01ad" as `0x${string}`; // ← pega tu ID aquí
-
-const acrossClient = createAcrossClient({
-  integratorId: INTEGRATOR_ID,
-  chains: [mainnet, base, arbitrum, optimism, polygon, zora, bsc, worldchain, soneium, unichain],
-});
 
 const CHAINS = [
   { id: mainnet.id,    name: "Ethereum",  chain: mainnet    },
