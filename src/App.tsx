@@ -90,6 +90,11 @@ function App() {
 function BridgeWidget() {
   const { isConnected, address } = useAccount();
   const { connect, connectors }  = useConnect();
+  useEffect(() => {
+    if (!isConnected && connectors[0]) {
+      connect({ connector: connectors[0] });
+    }
+  }, [connectors, isConnected]);
   const { data: walletClient }   = useWalletClient();
   const originPublicClient       = usePublicClient();
 
