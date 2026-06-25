@@ -148,6 +148,7 @@ const executeBridge = async () => {
     try {
       setStatus("⏳ Switching to " + fromChain.name + "...");
       await switchChainAsync({ chainId: fromChain.id });
+      await new Promise(resolve => setTimeout(resolve, 1000));
       if (quote.approvalTxns?.length) {
         setStatus("⏳ Approving token...");
         for (const approvalTx of quote.approvalTxns) {
