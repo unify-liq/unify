@@ -1,6 +1,6 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useWalletClient, usePublicClient } from "wagmi";
+import { useAccount, useConnect, useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
 import { parseUnits, type Address } from "viem";
 import {
   base, arbitrum, optimism, mainnet,
@@ -84,6 +84,7 @@ function App() {
 function BridgeWidget() {
   const { isConnected, address } = useAccount();
   const { connect, connectors }  = useConnect();
+  const { switchChainAsync } = useSwitchChain();
   useEffect(() => {
     if (!isConnected && connectors[0]) {
       connect({ connector: connectors[0] });
@@ -145,6 +146,8 @@ const executeBridge = async () => {
     setExecuting(true);
     setStatus("Preparing...");
     try {
+      setStatus("⏳ Switching to " + fromChain.name + "...");
+      await switchChainAsync({ chainId: fromChain.id });
       if (quote.approvalTxns?.length) {
         setStatus("⏳ Approving token...");
         for (const approvalTx of quote.approvalTxns) {
