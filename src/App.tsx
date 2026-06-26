@@ -127,9 +127,7 @@ const getQuote = async () => {
         depositor:          address,
         integratorId:       INTEGRATOR_ID,
       });
-      const res = await fetch(`https://app.across.to/api/swap/approval?${params}`, {
-        headers: { Authorization: `Bearer ${import.meta.env.VITE_ACROSS_API_KEY}` },
-      });
+      const res = await fetch(`https://app.across.to/api/swap/approval?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Quote failed");
       setQuote(data);
