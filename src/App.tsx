@@ -7,10 +7,7 @@ import {
   polygon, zora, bsc, worldchain, soneium, unichain
 } from "wagmi/chains";
 
-// ============================================================
-// CONFIGURACIÓN
-// ============================================================
-const INTEGRATOR_ID = "0x01ad" as `0x${string}`; // ← pega tu ID aquí
+const INTEGRATOR_ID = "0x01ad" as `0x${string}`;
 
 const CHAINS = [
   { id: mainnet.id,    name: "Ethereum",  chain: mainnet    },
@@ -25,7 +22,6 @@ const CHAINS = [
   { id: unichain.id,   name: "Unichain",  chain: unichain   },
 ];
 
-// Direcciones reales de tokens por chain
 const TOKEN_ADDRESSES: Record<string, Partial<Record<number, Address>>> = {
   USDC: {
     [mainnet.id]:    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -61,12 +57,8 @@ const TOKEN_DECIMALS: Record<string, number> = {
   USDC: 6, USDT: 6, WETH: 18, DAI: 18,
 };
 
-// ============================================================
-// APP
-// ============================================================
 function App() {
   useEffect(() => { sdk.actions.ready(); }, []);
-
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -78,23 +70,20 @@ function App() {
   );
 }
 
-// ============================================================
-// BRIDGE WIDGET
-// ============================================================
 function BridgeWidget() {
   const { isConnected, address } = useAccount();
   const { connect, connectors }  = useConnect();
-  const { switchChainAsync } = useSwitchChain();
+  const { switchChainAsync }     = useSwitchChain();
+  const originPublicClient       = usePublicClient();
+
   useEffect(() => {
     if (!isConnected && connectors[0]) {
       connect({ connector: connectors[0] });
     }
   }, [connectors, isConnected]);
-  const { data: walletClient }   = useWalletClient();
-  const originPublicClient       = usePublicClient();
 
-  const [fromChain, setFromChain] = useState(CHAINS[1]); // Base
-  const [toChain,   setToChain]   = useState(CHAINS[2]); // Arbitrum
+  const [fromChain, setFromChain] = useState(CHAINS[1]);
+  const [toChain,   setToChain]   = useState(CHAINS[2]);
   const [tokenSym,  setTokenSym]  = useState("USDC");
   const [amount,    setAmount]    = useState("");
   const [quote,     setQuote]     = useState<any>(null);
@@ -102,12 +91,11 @@ function BridgeWidget() {
   const [executing, setExecuting] = useState(false);
   const [status,    setStatus]    = useState("");
 
-  // Tokens disponibles para la ruta seleccionada
   const availableTokens = Object.keys(TOKEN_ADDRESSES).filter(
     sym => TOKEN_ADDRESSES[sym][fromChain.id] && TOKEN_ADDRESSES[sym][toChain.id]
   );
 
-const getQuote = async () => {
+  const getQuote = async () => {
     if (!amount || !address) return;
     const inputAddress  = TOKEN_ADDRESSES[tokenSym][fromChain.id];
     const outputAddress = TOKEN_ADDRESSES[tokenSym][toChain.id];
@@ -129,7 +117,7 @@ const getQuote = async () => {
         depositor:          address,
         integratorId:       INTEGRATOR_ID,
       });
-      const res = await fetch(`https://app.across.to/api/swap/approval?${params}`);
+      const res  = await fetch(`https://app.across.to/api/swap/approval?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Quote failed");
       setQuote(data);
@@ -139,23 +127,34 @@ const getQuote = async () => {
     setLoading(false);
   };
 
-const executeBridge = async () => {
-    if (!quote || !walletClient) return;
+  const executeBridge = async () => {
+    if (!quote) return;
     setExecuting(true);
     setStatus("⏳ Switching network...");
+
+    let freshWalletClient: any;
     try {
-      await switchChainAsync({ chainId: fromChain.id });
+      freshWalletClient = await switchChainAsync({ chainId: fromChain.id })
+        .then(() => connectors[0] as any)
+        .then(c => c.getWalletClient({ chainId: fromChain.id }));
     } catch {
       setStatus("❌ Could not switch network. Try again.");
       setExecuting(false);
       return;
     }
+
+    if (!freshWalletClient) {
+      setStatus("❌ Could not get wallet for this chain.");
+      setExecuting(false);
+      return;
+    }
+
     setStatus("⏳ Preparing...");
     try {
       if (quote.approvalTxns?.length) {
         setStatus("⏳ Approving token...");
         for (const approvalTx of quote.approvalTxns) {
-          const hash = await walletClient.sendTransaction({
+          const hash = await freshWalletClient.sendTransaction({
             to:   approvalTx.to,
             data: approvalTx.data,
           });
@@ -165,7 +164,7 @@ const executeBridge = async () => {
         setStatus("✅ Approved!");
       }
       setStatus("⏳ Sending to bridge...");
-      const hash = await walletClient.sendTransaction({
+      const hash = await freshWalletClient.sendTransaction({
         to:    quote.swapTx.to,
         data:  quote.swapTx.data,
         value: quote.swapTx.value ? BigInt(quote.swapTx.value) : 0n,
@@ -191,7 +190,7 @@ const executeBridge = async () => {
     );
   }
 
-const decimals    = TOKEN_DECIMALS[tokenSym];
+  const decimals    = TOKEN_DECIMALS[tokenSym];
   const outputAmt   = quote?.outputToken?.amount
     ? (Number(quote.outputToken.amount) / 10 ** decimals).toFixed(4)
     : quote?.minOutputAmount
@@ -202,8 +201,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
 
   return (
     <div style={styles.card}>
-
-      {/* FROM */}
       <div style={styles.row}>
         <label style={styles.label}>From</label>
         <select style={styles.select} value={fromChain.id} onChange={e => {
@@ -214,7 +211,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         </select>
       </div>
 
-      {/* TO */}
       <div style={styles.row}>
         <label style={styles.label}>To</label>
         <select style={styles.select} value={toChain.id} onChange={e => {
@@ -227,7 +223,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         </select>
       </div>
 
-      {/* TOKEN */}
       <div style={styles.row}>
         <label style={styles.label}>Token</label>
         <select style={styles.select} value={tokenSym} onChange={e => {
@@ -240,7 +235,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         </select>
       </div>
 
-      {/* AMOUNT */}
       <div style={styles.row}>
         <label style={styles.label}>Amount</label>
         <input
@@ -252,7 +246,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         />
       </div>
 
-      {/* GET QUOTE */}
       <button
         style={styles.buttonSecondary}
         onClick={getQuote}
@@ -261,7 +254,6 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         {loading ? "Getting quote..." : "Get Quote"}
       </button>
 
-      {/* QUOTE */}
       {quote && (
         <div style={styles.quoteBox}>
           <div style={styles.quoteRow}>
@@ -279,23 +271,17 @@ const decimals    = TOKEN_DECIMALS[tokenSym];
         </div>
       )}
 
-      {/* BRIDGE */}
       {quote && (
         <button style={styles.button} onClick={executeBridge} disabled={executing}>
           {executing ? "Bridging..." : `Bridge ${amount} ${tokenSym} →`}
         </button>
       )}
 
-      {/* STATUS */}
       {status && <div style={styles.status}>{status}</div>}
-
     </div>
   );
 }
 
-// ============================================================
-// ESTILOS
-// ============================================================
 const styles: Record<string, React.CSSProperties> = {
   container: {
     minHeight: "100vh", background: "#0a0a0a",
