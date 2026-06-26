@@ -1,6 +1,7 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useWalletClient, usePublicClient } from "wagmi";import { parseUnits, type Address } from "viem";
+import { useAccount, useConnect, useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
+import { parseUnits, type Address } from "viem";
 import {
   base, arbitrum, optimism, mainnet,
   polygon, zora, bsc, worldchain, soneium, unichain
@@ -83,6 +84,7 @@ function App() {
 function BridgeWidget() {
   const { isConnected, address } = useAccount();
   const { connect, connectors }  = useConnect();
+  const { switchChainAsync } = useSwitchChain();
   useEffect(() => {
     if (!isConnected && connectors[0]) {
       connect({ connector: connectors[0] });
@@ -140,15 +142,22 @@ const getQuote = async () => {
 const executeBridge = async () => {
     if (!quote || !walletClient) return;
     setExecuting(true);
+    setStatus("⏳ Switching network...");
+    try {
+      await switchChainAsync({ chainId: fromChain.id });
+    } catch {
+      setStatus("❌ Could not switch network. Try again.");
+      setExecuting(false);
+      return;
+    }
     setStatus("⏳ Preparing...");
     try {
       if (quote.approvalTxns?.length) {
         setStatus("⏳ Approving token...");
         for (const approvalTx of quote.approvalTxns) {
           const hash = await walletClient.sendTransaction({
-            to:      approvalTx.to,
-            data:    approvalTx.data,
-            chainId: fromChain.id,
+            to:   approvalTx.to,
+            data: approvalTx.data,
           });
           setStatus("⏳ Waiting for approval...");
           await originPublicClient!.waitForTransactionReceipt({ hash });
@@ -157,11 +166,10 @@ const executeBridge = async () => {
       }
       setStatus("⏳ Sending to bridge...");
       const hash = await walletClient.sendTransaction({
-        to:      quote.swapTx.to,
-        data:    quote.swapTx.data,
-        value:   quote.swapTx.value ? BigInt(quote.swapTx.value) : 0n,
-        gas:     quote.swapTx.gas   ? BigInt(quote.swapTx.gas)   : undefined,
-        chainId: fromChain.id,
+        to:    quote.swapTx.to,
+        data:  quote.swapTx.data,
+        value: quote.swapTx.value ? BigInt(quote.swapTx.value) : 0n,
+        gas:   quote.swapTx.gas   ? BigInt(quote.swapTx.gas)   : undefined,
       });
       setStatus("✅ Deposited! Waiting for fill...");
       await originPublicClient!.waitForTransactionReceipt({ hash });
