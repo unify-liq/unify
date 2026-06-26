@@ -1,6 +1,6 @@
 import { sdk } from "@farcaster/miniapp-sdk";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useWalletClient, usePublicClient, useSwitchChain } from "wagmi";
+import { useAccount, useConnect, usePublicClient, useSwitchChain } from "wagmi";
 import { parseUnits, type Address } from "viem";
 import {
   base, arbitrum, optimism, mainnet,
